@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, ScrollView, ImageBackground } from 'react-native';
-import { Container, Header, Title, Body, Footer, Content, FooterTab, Button, Icon } from 'native-base';
+import { Container, Header, Title, Body, Footer, Content, FooterTab, Button, Icon, Spinner } from 'native-base';
 import { Constants, Google } from 'expo';
 import { box } from './utils/styles';
 import { format, addMonths } from 'date-fns';
@@ -17,7 +17,9 @@ export default class App extends React.Component {
       today: new Date(),
       menu: 'home',
       user: undefined,
-      accessToken: ''
+      accessToken: '',
+      entered: false,
+      isLoggingIn: false
     }
 
     this.googleLogin = this.googleLogin.bind(this);
@@ -25,31 +27,37 @@ export default class App extends React.Component {
   componentDidMount() {
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
+        console.log(user);
         this.setState({ user })
+      } else {
+        this.setState({ user: undefined })
       }
     });
   }
   async googleLogin() {
+    this.setState({ isLoggingIn: true })
     try {
       const result = await Google.logInAsync({
         // androidClientId: YOUR_CLIENT_ID_HERE,
         iosClientId: '122077792070-s1ipe84g5gu368rnt8fl69jgqk0to63h.apps.googleusercontent.com',
         scopes: ['profile', 'email'],
       });
+      this.setState({ isLoggingIn: false });
 
       if (result.type === 'success') {
-        let credential = firebase.auth.GoogleAuthProvider.credential(null,result.accessToken)
+        let credential = firebase.auth.GoogleAuthProvider.credential(null, result.accessToken)
         firebase.auth().signInAndRetrieveDataWithCredential(credential)
       } else {
         // cancelled
       }
-    } catch(e) {
+    } catch (e) {
       // error
+      this.setState({ isLoggingIn: false });
     }
   }
   render() {
-    if (this.state.user) {
-      return <Main />
+    if (this.state.entered) {
+      return <Main user={this.state.user} />
     }
 
     return (
@@ -59,7 +67,6 @@ export default class App extends React.Component {
             source={require('./img/mainbg.jpg')}
             style={{
               width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center',
-
             }}
             opacity={0.5}>
             <Icon name="bug" />
@@ -69,8 +76,14 @@ export default class App extends React.Component {
               }}
             >MONEY BUG {this.state.accessToken}</Text>
             <Button iconLeft primary style={{ alignSelf: 'center', marginTop: 200 }} onPress={this.googleLogin}>
-              <Icon type="FontAwesome" name='google' />
-              <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15, marginHorizontal: 10 }}>Login With Google  </Text>
+              {
+                this.state.isLoggingIn ?
+                  <Spinner /> :
+                  <React.Fragment>
+                    <Icon type="FontAwesome" name='google' />
+                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 15, marginHorizontal: 10 }}>Login With Google  </Text>
+                  </React.Fragment>
+              }
             </Button>
           </ImageBackground>
         </Body>
