@@ -1,10 +1,11 @@
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native';
 import { Container, Header, Title, Body, Footer, Content, FooterTab, Button, Icon } from 'native-base';
 import { Constants } from 'expo';
 import { box } from '../utils/styles';
 import { format, addMonths } from 'date-fns';
 import Settings from './Settings';
+import Expenses from "./Expenses";
 
 const TitleCenter = ({ today, changeMonthBy }) => {
   return (
@@ -44,12 +45,15 @@ export default class Main extends React.Component {
             <TitleCenter today={this.state.today} changeMonthBy={this.changeMonthBy} />
           </Body>
         </Header>
-        <Content>
+        <Content style={{width: Dimensions.get('window').width * 9.5 / 10, alignSelf: 'center', marginVertical: 20}}>
           {
             this.state.menu === "home" && <Text>&nbsp;&nbsp;hm..</Text>
           }
           {
             this.state.menu === "settings" && <Settings />
+          }
+          {
+            this.state.menu === "expenses" && <Expenses today={this.state.today} />
           }
 
         </Content>
@@ -57,19 +61,23 @@ export default class Main extends React.Component {
           <FooterTab>
             {
               [
-                { menu: 'home', icon: 'home', text: 'Home' },
-                { menu: 'expense', icon: 'card', text: 'Expense' },
-                { menu: 'income', icon: 'cash', text: 'Income' },
-                { menu: 'settings', icon: 'settings', text: 'Settings' },
-              ].map(v => (
-                <Button
-                  vertical
-                  active={this.state.menu === v.menu}
-                  onPress={() => this.setState({ menu: v.menu })}>
-                  <Icon name={v.icon} />
-                  <Text>{v.text}</Text>
-                </Button>
-              ))
+                { menu: 'home', icon: 'home', text: 'Home', color: 'salmon' },
+                { menu: 'expenses', icon: 'card', text: 'Expenses', color: 'lightseagreen' },
+                { menu: 'income', icon: 'cash', text: 'Income', color: 'dodgerblue' },
+                { menu: 'settings', icon: 'settings', text: 'Settings', color: 'gold' },
+              ].map(v => {
+                let isActive = this.state.menu === v.menu;
+                return (
+                  <Button
+                    key={v.menu}
+                    vertical
+                    active={isActive}
+                    onPress={() => this.setState({ menu: v.menu })}>
+                    <Icon name={v.icon} />
+                    <Text style={{color: isActive ? v.color : 'darkgray'}}>{v.text}</Text>
+                  </Button>
+                )
+              })
             }
             {/* <Button vertical active={this.state.menu === 'home'}>
               <Icon name="home" />

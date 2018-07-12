@@ -17,6 +17,13 @@ const config = {
 };
 firebase.initializeApp(config);
 
-
 const db = firebase.firestore();
-export {firebase, db};
+db.settings({
+    timestampsInSnapshots: true
+});
+
+const makeDoc = (id, data) => ({
+    id, data: function() { return data }
+})
+
+export {firebase, db, makeDoc};
