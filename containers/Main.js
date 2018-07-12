@@ -3,9 +3,11 @@ import { StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native';
 import { Container, Header, Title, Body, Footer, Content, FooterTab, Button, Icon } from 'native-base';
 import { Constants } from 'expo';
 import { box } from '../utils/styles';
-import { format, addMonths } from 'date-fns';
 import Settings from './Settings';
-import Expenses from "./Expenses";
+import Logs from "./Logs";
+import Dashboard from  './Dashboard';
+import {db,firebase, makeDoc} from '../utils/firebase';
+import {addMonths, format, lastDayOfMonth, startOfDay} from 'date-fns'
 
 const TitleCenter = ({ today, changeMonthBy }) => {
   return (
@@ -28,15 +30,45 @@ export default class Main extends React.Component {
     super(props);
     this.state = {
       today: new Date(),
-      menu: 'home'
+      menu: 'home',
+      logs: []
     }
     this.changeMonthBy = this.changeMonthBy.bind(this);
+    this.onAdd = this.onAdd.bind(this);
+  }
+  componentDidMount() {
+    this.loadLogs();
+  }
+  async loadLogs() {
+    let {today} = this.state;
+    let query = db.collection('logs')
+        .where('uid','==',firebase.auth().currentUser.uid)
+        .where('logDate','>=',format(startOfDay(today), 'YYYY-MM-DD'))
+        .where('logDate','<=',format(lastDayOfMonth(today), 'YYYY-MM-DD'))
+    let snapshot = await query.get();
+    this.setState({logs: snapshot.docs}); 
   }
   changeMonthBy(offset) {
     this.setState(prev => ({
       today: addMonths(prev.today, offset)
     }));
+    this.loadLogs();
   }
+  onAdd(data) {
+    data.amt = parseFloat(data.amt);
+    data.uid = firebase.auth().currentUser.uid;
+    data.createDate = firebase.firestore.FieldValue.serverTimestamp();
+    data.logDate = format(new Date(), 'YYYY-MM-DD');
+    data.type = this.state.menu
+
+    db.collection('logs').add(data).then(docref => {
+        this.setState(prev => {
+            return {
+                logs: prev.logs.concat([ makeDoc(docref.id, data) ])
+            }
+        })
+    });
+}
   render() {
     return (
       <Container>
@@ -47,13 +79,14 @@ export default class Main extends React.Component {
         </Header>
         <Content style={{width: Dimensions.get('window').width * 9.5 / 10, alignSelf: 'center', marginVertical: 20}}>
           {
-            this.state.menu === "home" && <Text>&nbsp;&nbsp;hm..</Text>
+            this.state.menu === "home" && <Dashboard logs={this.state.logs} />
           }
           {
             this.state.menu === "settings" && <Settings />
           }
           {
-            this.state.menu === "expenses" && <Expenses today={this.state.today} />
+            (this.state.menu === "expenses" || this.state.menu === "income") && 
+                <Logs mode='expenses' logs={this.state.logs} type={this.state.menu} onAdd={this.onAdd} />
           }
 
         </Content>
