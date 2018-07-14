@@ -1,6 +1,7 @@
 import React, {Component} from "react";
 import {View, Text} from "react-native";
 import { List, ListItem } from "native-base";
+import LogCalendar from "../component/LogCalendar";
 
 export default class Dashboard extends Component {
 
@@ -68,6 +69,8 @@ export default class Dashboard extends Component {
                         }}>$ {total.expense.toFixed(2)}</Text>
                     </View>
                 </View>
+
+                <LogCalendar today={this.props.today} logs={this.props.logs} />
 
                 <View style={{marginTop: 20}}>
                     <Text style={styles.h1}>Recent Transactions</Text>

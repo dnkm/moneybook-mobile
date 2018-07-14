@@ -7,7 +7,7 @@ import Settings from './Settings';
 import Logs from "./Logs";
 import Dashboard from  './Dashboard';
 import {db,firebase, makeDoc} from '../utils/firebase';
-import {addMonths, format, lastDayOfMonth, startOfDay} from 'date-fns'
+import {addMonths, format, lastDayOfMonth, startOfMonth} from 'date-fns'
 
 const TitleCenter = ({ today, changeMonthBy }) => {
   return (
@@ -43,7 +43,7 @@ export default class Main extends React.Component {
     let {today} = this.state;
     let query = db.collection('logs')
         .where('uid','==',firebase.auth().currentUser.uid)
-        .where('logDate','>=',format(startOfDay(today), 'YYYY-MM-DD'))
+        .where('logDate','>=',format(startOfMonth(today), 'YYYY-MM-DD'))
         .where('logDate','<=',format(lastDayOfMonth(today), 'YYYY-MM-DD'))
     let snapshot = await query.get();
     this.setState({logs: snapshot.docs}); 
@@ -51,8 +51,10 @@ export default class Main extends React.Component {
   changeMonthBy(offset) {
     this.setState(prev => ({
       today: addMonths(prev.today, offset)
-    }));
-    this.loadLogs();
+    }), () => {
+      this.loadLogs();
+    });
+    
   }
   onAdd(data) {
     data.amt = parseFloat(data.amt);
@@ -79,7 +81,7 @@ export default class Main extends React.Component {
         </Header>
         <Content style={{width: Dimensions.get('window').width * 9.5 / 10, alignSelf: 'center', marginVertical: 20}}>
           {
-            this.state.menu === "home" && <Dashboard logs={this.state.logs} />
+            this.state.menu === "home" && <Dashboard logs={this.state.logs} today={this.state.today} />
           }
           {
             this.state.menu === "settings" && <Settings />
